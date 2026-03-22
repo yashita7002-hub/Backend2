@@ -63,12 +63,11 @@ const userSchema = new Schema({
 
 //dont use arrow function since it does not have reference of this
 //encrypts the password
-userSchema.pre("save", async function (next){
-    if(!this.isModified("password"))  return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  this.password = await bcrypt.hash(this.password, 10);
+});
 
-this.password = await bcrypt.hash(this.password, 10)
-next()
-})
 
 //comparing the password entered by the user with encrypted password
 userSchema.methods.isPasswordCorrect = async function(password){

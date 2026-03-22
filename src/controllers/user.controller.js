@@ -2,7 +2,7 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 import {ApiError} from "../utils/ApiError.js"
 import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
-
+import { ApiResponse } from "../utils/ApiResponse.js"
 
 
 
@@ -10,6 +10,12 @@ import {uploadOnCloudinary} from "../utils/cloudinary.js"
 
 
 const registerUser = asyncHandler(async(req,res) =>{
+
+ console.log("FILES:", req.files)
+console.log("BODY:", req.body)
+
+
+
   //get user details from frontend
   //validation - not empty
   //check if user already exists: username,email
@@ -33,7 +39,7 @@ if(
 
 
 
-const existedUser = User.findOne({
+const existedUser = await User.findOne({
   $or: [{ username },{ email }]
 })
 
@@ -45,7 +51,15 @@ if(existedUser){
 
 
 const avatarLocalPath = req.files?.avatar[0]?.path;
-const coverImageLocalPath = req.files?.coverImage[0]?.path;
+//const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+let coverImageLocalPath;
+if(req.files && Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length>0){
+      coverImageLocalPath = req.files.coverImage[0].path
+    }
+
+
 
 if(!avatarLocalPath){
   throw new ApiError(400, "Avatar file is required")
@@ -54,14 +68,14 @@ if(!avatarLocalPath){
 const avatar = await uploadOnCloudinary(avatarLocalPath)
 const coverImage = await uploadOnCloudinary(coverImageLocalPath)
   
-if(!avatar){
+if(!avatar?.url){
    throw new ApiError(400, "Avatar file is required")
 }
 
 
 
 
-await User.create({
+const createdUser = await User.create({
   fullName,
   avatar: avatar.url,
   coverImage: coverImage?.url || "",
@@ -70,20 +84,21 @@ await User.create({
   username: username.toLowerCase(),
 })
 
-await createdUser.findById(User._id).select(
+const user = await User.findById(createdUser._id).select(
   "-password -refreshToken"
 )//mongooose creates the id itself as well so comparing it to check if a user was registered in db or not
 
 
-if(!createdUser){
+if(!user){
    throw new ApiError(500, "Something went wrong while registering the user")
 }
 
 return res.status(201).json(
-  new ApiResponse(200, cre4atedUser, "  User registered Successfully")
+  new ApiResponse(200, createdUser, "  User registered Successfully")
 )
 
 })
+
 
 
 

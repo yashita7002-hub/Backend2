@@ -1,10 +1,15 @@
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
-
+import userRouter from "./routes/user.routes.js"
 
 const app = express()
 
+
+app.get("/", (req, res) => {
+    console.log("HOME HIT")
+    res.send("Server working")
+})
 app.use(
     cors(
         {
@@ -29,8 +34,8 @@ app.use(cookieParser())//read cookies from the client request.
 
 
 //routes import
-import userRouter from "./routes/user.routes.js"
+
 
 //routes declaration
-app.use("/users", userRouter)
+app.use("/api/v1/users", userRouter)
 export {app}
